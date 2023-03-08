@@ -18,7 +18,6 @@ If True Then ;constants
 	Global $towersarr[100][9]
 	$picsize = 1
 	$cutoff = 0.95
-	$s = 10
 
 	Enum $INPUT, $WAITCLICK, $STRATEGIZING, $kEYLOGGING, $WAITLCLICK, $FOLLOWSTRAT, $LASTSTATE
 	Enum $NAME, $SX, $SY, $READINGS
@@ -54,6 +53,7 @@ If True Then ;initialize GUI and other variables
 	$defs = FileOpen($fileheader & "/def.txt", $FO_READ)
 	$x=int(FileReadLine($defs))
 	$y=int(FileReadLine($defs))
+	$s=int(FileReadLine($defs))
 	$towers = 0
 	$guu = GUICreate("Bloons Farm", 500, 500, $x,$y)
 	$stateGUI = GUICtrlCreateLabel("", 40, 40, 120, 20)
@@ -62,11 +62,11 @@ If True Then ;initialize GUI and other variables
 	$mstalhkjsdhjkl = GUICtrlCreateLabel("Meta State", 0, 20, 60, 20)
 	;$INPUT screen
 	$addstate = GUICtrlCreateButton("create state of name:", 40, 60)
-	$checkstate = GUICtrlCreateButton("check how close this screen is to that state", 40, 90)
-	$checkallstates = GUICtrlCreateButton("blind check", 40, 120)
+	;$checkstate = GUICtrlCreateButton("check how close this screen is to that state", 40, 90)
+	$checkallstates = GUICtrlCreateButton("blind check", 40, 90)
 	$strategizebutton = GUICtrlCreateButton("strategize", 40, 150)
 
-	$simscore = GUICtrlCreateLabel("", 270, 90, 150, 20)
+	;$simscore = GUICtrlCreateLabel("", 270, 90, 150, 20)
 
 
 
@@ -85,6 +85,11 @@ If True Then ;initialize GUI and other variables
 	$farmbutton = GUICtrlCreateButton("farm", 40, 210)
 	$newlinkerbutton = GUICtrlCreateButton("new linker", 260, 210)
 	$appendlinkerbutton = GUICtrlCreateButton("write location (make sure state is correct)", 130, 240)
+
+	$delable = GUICtrlCreateLabel("global delay", 330, 60)
+	$delable2 = GUICtrlCreateLabel("(increase if tool inputs to bloons are not being recieved)", 240, 150)
+	$delayin = GUICtrlCreateInput(String($s), 310, 90, 100, 20)
+	$setdelaybutton = GUICtrlCreateButton("update", 340, 120)
 
 	;strategize screen
 	$backbutton = GUICtrlCreateButton("back", 40, 60)
@@ -149,13 +154,13 @@ If True Then ;initialize GUI and other variables
 
 		If True Then ;$INPUT screen
 			$this = $INPUT
-			$metastates[$this][$CONTROLS][0] = 13
+			$metastates[$this][$CONTROLS][0] = 17
 			$metastates[$this][$CONTROLLIST][0] = $addstate
 			$metastates[$this][$CONTROLLIST][1] = $in
-			$metastates[$this][$CONTROLLIST][2] = $checkstate
+			;$metastates[$this][$CONTROLLIST][2] = $checkstate
 			$metastates[$this][$CONTROLLIST][3] = $checkallstates
 			$metastates[$this][$CONTROLLIST][4] = $strategizebutton
-			$metastates[$this][$CONTROLLIST][5] = $simscore
+			;$metastates[$this][$CONTROLLIST][5] = $simscore
 			$metastates[$this][$CONTROLLIST][6] = $teststratbutton
 			$metastates[$this][$CONTROLLIST][7] = $teststratin
 			$metastates[$this][$CONTROLLIST][8] = $clipcoords
@@ -163,6 +168,10 @@ If True Then ;initialize GUI and other variables
 			$metastates[$this][$CONTROLLIST][10] = $linkerin
 			$metastates[$this][$CONTROLLIST][11] = $newlinkerbutton
 			$metastates[$this][$CONTROLLIST][12] = $appendlinkerbutton
+			$metastates[$this][$CONTROLLIST][13] = $delayin
+			$metastates[$this][$CONTROLLIST][14] = $delable
+			$metastates[$this][$CONTROLLIST][15] = $setdelaybutton
+			$metastates[$this][$CONTROLLIST][16] = $delable2
 
 			$i = 0
 			While ($i < $metastates[$this][$CONTROLS][0])
@@ -309,11 +318,6 @@ While 1 ;main loop
 					change_meta_state($WAITCLICK)
 					await_mouse_click($fileheader & "/states/" & GUICtrlRead($in) & ".txt")
 					change_meta_state($INPUT)
-				Case $checkstate
-					$fhand = FileOpen($fileheader & "/states/" & GUICtrlRead($in) & ".txt")
-					$si = state_similarity($fhand)
-					GUICtrlSetData($simscore, String($si))
-					FileClose($fhand)
 				Case $checkallstates
 					blind_state_check(True)
 				Case $strategizebutton
@@ -359,6 +363,8 @@ While 1 ;main loop
 						$wins=0
 						$resets=0
 					EndIf
+				case $setdelaybutton
+					$s=int(GUICtrlRead($delayin))
 
 
 
@@ -1272,6 +1278,7 @@ Func Quit()
 	$x=$temp[0]
 	FileWriteLine($defs,$x)
 	FileWriteLine($defs,$y)
+	FileWriteLine($defs,$s)
 	FileWriteLine($defs,GUICtrlRead($teststratin))
 	FileWriteLine($defs,GUICtrlRead($linkerin))
 	FileClose($defs)
