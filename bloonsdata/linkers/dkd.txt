@@ -1,0 +1,18 @@
+beginner0
+480
+471
+expert0
+480
+470
+expert1
+502
+165
+entering map
+189
+227
+entering easy
+454
+242
+between
+332
+352
