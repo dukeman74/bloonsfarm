@@ -356,8 +356,9 @@ While 1 ;main loop
 					$linkerfile = FileOpen($fileheader & "/linkers/" & GUICtrlRead($linkerin) & ".txt", $FO_READ)
 					if $linkerfile <> -1 and $stratfile <> -1 Then
 						ConsoleWrite("starting farming" & @CRLF)
-						snap($fileheader & "/init.bmp")
-						_GUICtrlButton_SetImage($initmoney,$fileheader & "/init.bmp")
+						$fname=$fileheader & "/tempdata/init.bmp"
+						snap($fname)
+						_GUICtrlButton_SetImage($initmoney,$fname)
 						read_linker($linkerfile)
 						$farming=true
 						$wins=0
@@ -611,8 +612,8 @@ Func changeTargeting($alt)
    endif
 EndFunc
 
-Func snap($fname)
-   $boi=_ScreenCapture_Capture("", $bx + 508, $by + 41, $bx + 606, $by + 66)
+Func snap($fname,$x=508,$y=41,$x2=606,$y2=66)
+   $boi=_ScreenCapture_Capture("", $bx + $x, $by + $y, $bx + $x2, $by + $y2)
    _ScreenCapture_SaveImage ( $fname, $boi)
 EndFunc
 
@@ -625,12 +626,11 @@ Func read_linker($linkerfile)
 		$y = FileReadLine($linkerfile)
 		;ConsoleWrite(@error == -1 & @CRLF)
 		if @error == -1 Then
-			ConsoleWrite("error time"  & @CRLF)
 			Return
 		EndIf
-		ConsoleWrite("state of name " & $awaitstate  & @CRLF)
+		;ConsoleWrite("state of name " & $awaitstate  & @CRLF)
 		$linker[$linkers][0]=state_name_to_id($awaitstate)
-		ConsoleWrite("written in as " & $linker[$linkers][0]  & @CRLF)
+		;ConsoleWrite("written in as " & $linker[$linkers][0]  & @CRLF)
 		$linker[$linkers][1]=$x
 		$linker[$linkers][2]=$y
 		$linkers+=1
@@ -659,8 +659,9 @@ Func click_play()
 	While state_similarity($menu) < $cutoff
 		sleep($s)
 	WEnd
-	snap($fileheader & "/current.bmp")
-	_GUICtrlButton_SetImage($currentmoney,$fileheader & "/current.bmp")
+	$fname=$fileheader & "/tempdata/current.bmp"
+	snap($fname)
+	_GUICtrlButton_SetImage($currentmoney,$fname)
 	MouseMove($bx + 277, $by + 455, 0)
 	Sleep($s)
 	MouseClick($MOUSE_CLICK_LEFT)
@@ -721,6 +722,13 @@ Func follow_strat()
 		if state_similarity($betweenrnd) > $cutoff Then
 			$waiting=false
 		ElseIf state_similarity($defeat) > $cutoff Then
+
+			if $resets<5 Then
+				$fname=$fileheader & "/tempdata/loss" & String($resets) & ".bmp"
+				snap($fname,278,240,388,261)
+			EndIf
+
+
 			MouseMove($bx + 324, $by + 374, 0)
 			Sleep($s)
 
