@@ -294,6 +294,7 @@ If True Then ;initialize GUI and other variables
 	$menu=state_name_to_id("main menu")
 	$continue=state_name_to_id("continue")
 	$pop=state_name_to_id("in game popup")
+	$claim=state_name_to_id("claim")
 	$waiting=false
 	$finished=false
 	$wins=0
@@ -656,7 +657,20 @@ Func follow_linker()
 EndFunc
 
 Func click_play()
+	WinActivate($hand)
+	sleep($s)
+	$click=False
 	While state_similarity($menu) < $cutoff
+		if state_similarity($claim) > $cutoff Then
+			MouseMove($bx + 326, $by + 402,0)
+			Sleep($s)
+			MouseClick($MOUSE_CLICK_LEFT)
+			$click=True
+			MouseMove($bx + 367, $by + 72, 0)
+		EndIf
+		if $click Then
+			MouseClick($MOUSE_CLICK_LEFT)
+		EndIf
 		sleep($s)
 	WEnd
 	$fname=$fileheader & "/tempdata/current.bmp"
@@ -724,6 +738,7 @@ Func follow_strat()
 		ElseIf state_similarity($defeat) > $cutoff Then
 
 			if $resets<5 Then
+				sleep(1000)
 				$fname=$fileheader & "/tempdata/loss" & String($resets) & ".bmp"
 				snap($fname,278,240,388,261)
 			EndIf
