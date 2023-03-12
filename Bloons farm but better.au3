@@ -32,7 +32,7 @@ If True Then ;constants
 	$metastates[$STRATEGIZING][$NAME][0] = "Strategizing"
 	$metastates[$kEYLOGGING][$NAME][0] = "Waiting for keystroke"
 	$metastates[$WAITLCLICK][$NAME][0] = "Waiting for left click"
-	Global $states[25][5][$pictureroot * $pictureroot]
+	Global $states[200][5][$pictureroot * $pictureroot]
 	global $targidtostring[4]
 	$targidtostring[0]="first"
 	$targidtostring[1]="last"
