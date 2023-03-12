@@ -237,7 +237,12 @@ If True Then ;initialize GUI and other variables
 
 	EndIf
 	;WinSetState($guu, "", @SW_hide)
+	$writeout=""
 	$hand = WinGetHandle("BloonsTD6")
+	if @error <> 0 Then
+		$writeout="bloons is not running"
+		Quit()
+	EndIf
 
 	$state = ""
 	$metastate = ""
@@ -376,6 +381,9 @@ While 1 ;main loop
 
 				click_play()
 				follow_linker()
+				While state_similarity($betweenrnd) < $cutoff
+					sleep($s)
+				WEnd
 				sleep($s*5)
 				$a=state_similarity($pop)
 				;ConsoleWrite($a & @CRLF)
@@ -1295,6 +1303,10 @@ EndFunc   ;==>await_key_press
 
 Func Quit()
 	;;;;;;;;;;;;;;;;;;;;;;;;;;
+	if $writeout <> "" Then
+		MsgBox($MB_SYSTEMMODAL, $writeout, "")
+		Exit
+	EndIf
 	$defs = FileOpen($fileheader & "/def.txt", $FO_OVERWRITE )
 	$temp=WinGetPos($guu)
 	$y=$temp[1]
