@@ -49,6 +49,8 @@ If True Then ;constants
 EndIf
 
 If True Then ;initialize GUI and other variables
+	global $StrArray
+	global $stratname
 	$fileheader = "bloonsdata"
 	$defs = FileOpen($fileheader & "/def.txt", $FO_READ)
 	$x=int(FileReadLine($defs))
@@ -118,7 +120,8 @@ If True Then ;initialize GUI and other variables
 	$removebutton = GUICtrlCreateButton("remove obstacle", 40, 160)
 	$dividerlabel = GUICtrlCreateLabel("----------------", 40, 225)
 	$sendroundbutton = GUICtrlCreateButton("send round", 40, 240)
-	$sendallbutton = GUICtrlCreateButton("send all", 40, 270)
+	$retrylastbutton = GUICtrlCreateButton("retry", 40, 300)
+	$sendallbutton = GUICtrlCreateButton("send all", 40, 370)
 	$map = GUICtrlCreatebutton("", $littlex, $littley,$littlewidth,$littleheight,$BS_BITMAP)
 	GUICtrlSetState($map, $GUI_DISABLE)
 
@@ -183,7 +186,7 @@ If True Then ;initialize GUI and other variables
 
 		If True Then ;strategize screen
 			$this = $STRATEGIZING
-			$metastates[$this][$CONTROLS][0] = 28
+			$metastates[$this][$CONTROLS][0] = 29
  			$metastates[$this][$CONTROLLIST][0] = $backbutton
 			$metastates[$this][$CONTROLLIST][1] = $droptower
 			$metastates[$this][$CONTROLLIST][2] = $setfile
@@ -212,6 +215,7 @@ If True Then ;initialize GUI and other variables
 			$metastates[$this][$CONTROLLIST][25] = $dividerlabel
 			$metastates[$this][$CONTROLLIST][26] = $dividerlabel2
 			$metastates[$this][$CONTROLLIST][27] = $map
+			$metastates[$this][$CONTROLLIST][28] = $retrylastbutton
 
 
 			$i = 0
@@ -422,18 +426,10 @@ While 1 ;main loop
 					set_invisible()
 					most_recent_tower_to_ctrl()
 				Case $setfile
-					$stratfile = FileOpen($fileheader & "/strats/" & GUICtrlRead($sfilein) & ".txt", $FO_APPEND)
-					;ConsoleWrite("tried to open file, " & $stratfile & @CRLF)
-					If ($stratfile <> -1) Then
-						flip_r()
-						wipe_towers()
-						read_file()
-					EndIf
+					$stratname=$fileheader & "/strats/" & GUICtrlRead($sfilein) & ".txt"
+					lock()
 				Case $unlockfile
-					FileClose($stratfile)
-					$stratfile = -1
-					flip_r()
-					wipe_towers(true)
+					unlock()
 				Case $towershow
 					store_mouse()
 					$tow = Int(GUICtrlRead($towerpick))
@@ -488,6 +484,8 @@ While 1 ;main loop
 					FileWriteLine($stratfile,String($prey))
 					change_meta_state($STRATEGIZING)
 					restore_mouse()
+				case $retrylastbutton
+					retry_last_round()
 			EndSwitch
 			if True Then ; check if tower input refers to a real tower
 				$tow = (GUICtrlRead($towerpick))
@@ -527,6 +525,64 @@ While 1 ;main loop
 
 
 WEnd
+
+Func lock()
+	$stratfile = FileOpen($stratname, $FO_APPEND)
+	;ConsoleWrite("tried to open file, " & $stratfile & @CRLF)
+	If ($stratfile <> -1) Then
+		flip_r()
+		wipe_towers()
+		read_file()
+	EndIf
+EndFunc
+
+Func unlock()
+	FileClose($stratfile)
+	$stratfile = -1
+	flip_r()
+	wipe_towers(true)
+EndFunc
+
+Func retry_last_round()
+	WinActivate($hand)
+	sleep($s)
+	MouseMove($bx + 463, $by + 386,0)
+	MouseClick($MOUSE_CLICK_LEFT)
+	sleep($s)
+	unlock() ;
+	DeleteString($stratname)
+
+
+	lock()
+EndFunc
+
+
+Func DeleteString($sFileName)
+    Local $FileHwnd
+
+    If Not FileExists($sFileName) Then
+        MsgBox(16, "Error", "File not exist")
+        Exit
+    EndIf
+
+    _FileReadToArray($sFileName, $StrArray)
+	while (UBound($StrArray)>1 and $StrArray[UBound($StrArray)-1]<>"------------------------------------------")
+		_ArrayDelete($StrArray, UBound($StrArray)-1) ; delete any data up to the first ------------------------------------------
+	WEnd
+    _ArrayDelete($StrArray, UBound($StrArray)-1) ; delete first ------------------------------------------
+    while (UBound($StrArray)>1 and $StrArray[UBound($StrArray)-1]<>"------------------------------------------")
+
+		_ArrayDelete($StrArray, UBound($StrArray)-1) ; delete any data up to the next ------------------------------------------
+	WEnd
+    $FileHwnd = FileOpen($sFileName, 2)
+
+    For $i = 1 To UBound($StrArray) -1
+        FileWriteLine($FileHwnd, $StrArray[$i])
+    Next
+
+    FileClose($FileHwnd)
+EndFunc
+
 
 Func most_recent_tower_to_ctrl()
 	$x=$towersarr[$towers-1][$TX]
@@ -753,7 +809,7 @@ Func follow_strat()
 
 
 			MouseMove($bx + 324, $by + 374, 0)
-			Sleep($s)
+			Sleep($s*3)
 
 			MouseClick($MOUSE_CLICK_LEFT)
 			While state_similarity($restart) < $cutoff
@@ -910,12 +966,11 @@ Func select_tower($tow)
 		MouseMove($bx + 636, $by + 75, 0)
 		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
-		Sleep($s)
+		Sleep($s*10)
 		MouseMove($bx + $towersarr[$tow][0], $by + $towersarr[$tow][1], 0)
 		Sleep($s)
-
-		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
+		Sleep($s)
 	EndIf
 EndFunc   ;==>select_tower
 
@@ -1299,6 +1354,8 @@ Func await_key_press()
 
 
 EndFunc   ;==>await_key_press
+
+
 
 
 Func Quit()
