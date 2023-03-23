@@ -22,11 +22,11 @@ If True Then ;constants
 	Enum $INPUT, $WAITCLICK, $STRATEGIZING, $kEYLOGGING, $WAITLCLICK, $FOLLOWSTRAT, $LASTSTATE
 	Enum $NAME, $SX, $SY, $READINGS
 	Enum $NAMEneveruhsdaasdg, $CONTROLS, $CONTROLLIST
-	Enum $PLACE, $UPGRADE, $SELL, $STARTROUND, $FULLSEND, $CHANGETARG, $REMOVEOB
+	Enum $PLACE, $UPGRADE, $SELL, $STARTROUND, $FULLSEND, $CHANGETARG, $REMOVEOB,$QUEUEABILITY
 	Enum $TX, $TY, $TTYPE, $TSOLD, $TTOP, $TMID, $TBOT, $TTARG, $TCTRL
 	$metastatcount = $LASTSTATE
 	$pictureroot = ($picsize * 2 + 1)
-	Global $metastates[$metastatcount][5][30]
+	Global $metastates[$metastatcount][5][50]
 	$metastates[$INPUT][$NAME][0] = "Waiting for input"
 	$metastates[$WAITCLICK][$NAME][0] = "Waiting for right click"
 	$metastates[$STRATEGIZING][$NAME][0] = "Strategizing"
@@ -46,6 +46,10 @@ If True Then ;constants
 	$littleheight=420-$littley
 	$bigwidth=650
 	$bigheight=510
+	$micros=0
+	$microat=0
+	global $timer=0
+	global $micro[40][2]
 EndIf
 
 If True Then ;initialize GUI and other variables
@@ -94,22 +98,31 @@ If True Then ;initialize GUI and other variables
 	$setdelaybutton = GUICtrlCreateButton("update", 340, 120)
 
 	;strategize screen
-	$backbutton = GUICtrlCreateButton("back", 40, 60)
-	$setfile = GUICtrlCreateButton("pick file to append to", 40, 90)
+
+	$abilityy=190
+	$stratbuttonx=10
+	$abilityx=$stratbuttonx
+	$backbutton = GUICtrlCreateButton("back", $stratbuttonx, 60)
+	$setfile = GUICtrlCreateButton("pick file to append to", $stratbuttonx, 90)
 	$sfilein = GUICtrlCreateInput("", 160, 93, 100, 20)
-	$dividerlabel2 = GUICtrlCreateLabel("----------------", 40, 115)
-	$droptower = GUICtrlCreateButton("drop a tower", 40, 130)
+	$dividerlabel2 = GUICtrlCreateLabel("----------------", $stratbuttonx, 115)
+	$droptower = GUICtrlCreateButton("drop a tower", $stratbuttonx, 130)
 	$unlockfile = GUICtrlCreateButton("unlock", 290, 90)
 	;$readfile = GUICtrlCreateButton("read towers in", 350, 90)
 	$towercounter = GUICtrlCreateLabel("Towers: ", 160, 120,100)
 	$towershow = GUICtrlCreateButton("show me this tower", 160, 140)
+	$useabilitybutton = GUICtrlCreateButton("use ability", $abilityx, $abilityy)
+	$useabilitykeyin = GUICtrlCreateInput("", 57+$abilityx, $abilityy,20,25)
+	$afterlabel = GUICtrlCreatelabel("after", 80+$abilityx, $abilityy+5)
+	$useabilitydelayin = GUICtrlCreateInput("", 102+$abilityx, $abilityy,40,25)
+	$secondslabel = GUICtrlCreatelabel("s", 145+$abilityx, $abilityy+5)
 	$towermid = GUICtrlCreateButton("upgrade middle path", 280, 150)
 	$towertop = GUICtrlCreateButton("upgrade top path", 280, 120)
 	$towerbot = GUICtrlCreateButton("upgrade bottom path", 280, 180)
 	$towersell = GUICtrlCreateButton("sell", 280, 210, 100)
-	$targetleft = GUICtrlCreateButton("<", 160, 200)
+	$targetleft = GUICtrlCreateButton("<", 170, 200)
 	$targetlabel = GUICtrlCreateLabel("first", 200, 207,30)
-	$targetright = GUICtrlCreateButton(">", 245, 200)
+	$targetright = GUICtrlCreateButton(">", 235, 200)
 	$towerpick = GUICtrlCreateInput("", 160, 173, 100, 20)
 	$upgradelabel = GUICtrlCreateLabel("This many times", 400, 130)
 	$upgradetimesin = GUICtrlCreateInput("1", 392, 153, 100, 20)
@@ -117,11 +130,11 @@ If True Then ;initialize GUI and other variables
 	$midlabel = GUICtrlCreateLabel("0", 265, 153)
 	$botlabel = GUICtrlCreateLabel("0", 265, 183)
 	$inround = GUICtrlCreateLabel("between rounds", 200, 20)
-	$removebutton = GUICtrlCreateButton("remove obstacle", 40, 160)
-	$dividerlabel = GUICtrlCreateLabel("----------------", 40, 225)
-	$sendroundbutton = GUICtrlCreateButton("send round", 40, 240)
-	$retrylastbutton = GUICtrlCreateButton("retry", 40, 300)
-	$sendallbutton = GUICtrlCreateButton("send all", 40, 370)
+	$removebutton = GUICtrlCreateButton("remove obstacle", $stratbuttonx, 160)
+	$dividerlabel = GUICtrlCreateLabel("----------------", $stratbuttonx, 225)
+	$sendroundbutton = GUICtrlCreateButton("send round", $stratbuttonx, 240)
+	$retrylastbutton = GUICtrlCreateButton("retry", $stratbuttonx, 300)
+	$sendallbutton = GUICtrlCreateButton("send all", $stratbuttonx, 370)
 	$map = GUICtrlCreatebutton("", $littlex, $littley,$littlewidth,$littleheight,$BS_BITMAP)
 	GUICtrlSetState($map, $GUI_DISABLE)
 
@@ -186,7 +199,7 @@ If True Then ;initialize GUI and other variables
 
 		If True Then ;strategize screen
 			$this = $STRATEGIZING
-			$metastates[$this][$CONTROLS][0] = 29
+			$metastates[$this][$CONTROLS][0] = 34
  			$metastates[$this][$CONTROLLIST][0] = $backbutton
 			$metastates[$this][$CONTROLLIST][1] = $droptower
 			$metastates[$this][$CONTROLLIST][2] = $setfile
@@ -216,6 +229,11 @@ If True Then ;initialize GUI and other variables
 			$metastates[$this][$CONTROLLIST][26] = $dividerlabel2
 			$metastates[$this][$CONTROLLIST][27] = $map
 			$metastates[$this][$CONTROLLIST][28] = $retrylastbutton
+			$metastates[$this][$CONTROLLIST][29] = $useabilitybutton
+			$metastates[$this][$CONTROLLIST][30] = $useabilitydelayin
+			$metastates[$this][$CONTROLLIST][31] = $useabilitykeyin
+			$metastates[$this][$CONTROLLIST][32] = $secondslabel
+			$metastates[$this][$CONTROLLIST][33] = $afterlabel
 
 
 			$i = 0
@@ -486,6 +504,10 @@ While 1 ;main loop
 					restore_mouse()
 				case $retrylastbutton
 					retry_last_round()
+				case $useabilitybutton
+					$ability=GUICtrlRead($useabilitykeyin)
+					$delay=Number(GUICtrlRead($useabilitydelayin))
+					push_micro($ability,$delay,false)
 			EndSwitch
 			if True Then ; check if tower input refers to a real tower
 				$tow = (GUICtrlRead($towerpick))
@@ -507,9 +529,11 @@ While 1 ;main loop
 				EndIf
 			EndIf
 			if $playing Then ; check for making it out of round
+				do_micro()
 				if state_similarity($betweenrnd) > $cutoff Then
 					GUICtrlSetData($inround,"between rounds")
 					$playing=False
+					reset_round()
 				EndIf
 
 			EndIf
@@ -525,6 +549,31 @@ While 1 ;main loop
 
 
 WEnd
+
+Func reset_round()
+	$micros=0
+EndFunc
+
+Func push_micro($ability,$delay,$nowrite=True)
+	$micro[$micros][0]=$ability
+	$micro[$micros][1]=$delay
+	$micros+=1
+	if $nowrite then Return
+	FileWriteLine($stratfile, String($QUEUEABILITY))
+	FileWriteLine($stratfile, String($ability))
+	FileWriteLine($stratfile, String($delay))
+EndFunc
+
+Func do_micro()
+	if($microat<$micros) Then
+		if(TimerDiff($timer)/1000>=$micro[$microat][1]) Then
+			WinActivate($hand)
+			Send($micro[$microat][0])
+			$microat+=1
+		EndIf
+
+	EndIf
+EndFunc
 
 Func lock()
 	$stratfile = FileOpen($stratname, $FO_APPEND)
@@ -783,6 +832,10 @@ Func follow_strat()
 					$x2=int(FileReadLine($stratfile))
 					$y2=int(FileReadLine($stratfile))
 					remove_obstacle($x,$y,$x2,$y2)
+				case $QUEUEABILITY
+					$abilitykey=FileReadLine($stratfile)
+					$delay=number(FileReadLine($stratfile))
+					push_micro($abilitykey,$delay)
 				case $STARTROUND
 					FileReadLine($stratfile)
 					send_round(False)
@@ -794,22 +847,24 @@ Func follow_strat()
 			EndSwitch
 		EndIf
 	Else
+		do_micro()
 		MouseMove($bx + 636, $by + 75, 0)
 		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
 		if state_similarity($betweenrnd) > $cutoff Then
 			$waiting=false
+			reset_round()
 		ElseIf state_similarity($defeat) > $cutoff Then
 
-			if $resets<5 Then
+			if $resets<20 Then
 				sleep(1000)
 				$fname=$fileheader & "/tempdata/loss" & String($resets) & ".bmp"
-				snap($fname,278,240,388,261)
+				snap($fname,171,189,487,376)
 			EndIf
 
-
+			WinActivate($hand)
 			MouseMove($bx + 324, $by + 374, 0)
-			Sleep($s*3)
+			Sleep($s*5)
 
 			MouseClick($MOUSE_CLICK_LEFT)
 			While state_similarity($restart) < $cutoff
@@ -857,6 +912,8 @@ Func follow_strat()
 EndFunc
 
 Func send_round($write=True)
+	$microat=0
+	$timer=TimerInit()
 	WinActivate($hand)
 	sleep($s)
 	Send("{SPACE}")
@@ -1052,6 +1109,9 @@ Func read_file()
 			$stratfile = -1
 			flip_r()
 			Return
+		ElseIf $instruct==$QUEUEABILITY Then
+			$x2=int(FileReadLine($stratfile))
+			$y2=int(FileReadLine($stratfile))
 		EndIf
 		If @error == -1 Or @error == 1 Then
 			ConsoleWrite("towers is now " & $towers & @CRLF)
@@ -1116,6 +1176,10 @@ Func flip_r()
 	flip_file_validity($sendallbutton)
 	flip_file_validity($sendroundbutton)
 	flip_file_validity($removebutton)
+	flip_file_validity($useabilitybutton)
+	flip_file_validity($useabilitydelayin)
+	flip_file_validity($useabilitykeyin)
+	flip_file_validity($retrylastbutton)
 EndFunc   ;==>flip_r
 
 Func flip_file_validity($ctrl)
