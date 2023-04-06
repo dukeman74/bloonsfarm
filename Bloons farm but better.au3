@@ -9,6 +9,7 @@
 #include <File.au3>
 
 HotKeySet("^!q", "Quit")
+;HotKeySet("^!a", "handle_collection")
 
 If True Then ;constants
 	Opt("GUICloseOnESC", 0)
@@ -322,6 +323,7 @@ If True Then ;initialize GUI and other variables
 	$continue=state_name_to_id("continue")
 	$pop=state_name_to_id("in game popup")
 	$claim=state_name_to_id("claim")
+	$collect=state_name_to_id("collect")
 	$waiting=false
 	$finished=false
 	$wins=0
@@ -757,6 +759,12 @@ Func follow_linker()
 	while $linkerat<$linkers
 		While state_similarity($linker[$linkerat][0]) < $cutoff
 			sleep($s)
+			If state_similarity($collect) > $cutoff Then
+				MouseMove($bx + 347, $by + 332,0)
+				Sleep($s)
+				MouseClick($MOUSE_CLICK_LEFT)
+				handle_collection()
+			EndIf
 		WEnd
 		MouseMove($bx + $linker[$linkerat][1], $by + $linker[$linkerat][2], 0)
 		Sleep($s)
@@ -769,10 +777,29 @@ Func follow_linker()
 
 EndFunc
 
+
+Func handle_collection()
+	$i=28
+	$end=634
+	while($i<$end)
+		MouseMove($bx + $i, $by + 270,0)
+		Sleep($s)
+		MouseClick($MOUSE_CLICK_LEFT)
+		Sleep($s)
+		MouseClick($MOUSE_CLICK_LEFT)
+		Sleep($s)
+		MouseClick($MOUSE_CLICK_LEFT)
+		$i+=3
+	WEnd
+	Send("{ESC}")
+	Sleep($s)
+EndFunc
+
 Func click_play()
 	WinActivate($hand)
 	sleep($s)
 	$click=False
+	$collection_moment=False
 	While state_similarity($menu) < $cutoff
 		if state_similarity($claim) > $cutoff Then
 			MouseMove($bx + 326, $by + 402,0)
@@ -780,6 +807,15 @@ Func click_play()
 			MouseClick($MOUSE_CLICK_LEFT)
 			$click=True
 			MouseMove($bx + 367, $by + 72, 0)
+		EndIf
+		If state_similarity($collect) > $cutoff Then
+			MouseMove($bx + 347, $by + 332,0)
+			Sleep($s)
+			MouseClick($MOUSE_CLICK_LEFT)
+			$collection_moment=True
+		EndIf
+		if $collection_moment Then
+			handle_collection()
 		EndIf
 		if $click Then
 			MouseClick($MOUSE_CLICK_LEFT)
@@ -1432,6 +1468,10 @@ Func Quit()
 	$temp=WinGetPos($guu)
 	$y=$temp[1]
 	$x=$temp[0]
+	if($x==-32000) Then
+		$x=200
+		$y=200
+	EndIf
 	FileWriteLine($defs,$x)
 	FileWriteLine($defs,$y)
 	FileWriteLine($defs,$s)
