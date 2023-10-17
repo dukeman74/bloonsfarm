@@ -607,7 +607,6 @@ Func retry_last_round()
 	lock()
 EndFunc
 
-
 Func DeleteString($sFileName)
     Local $FileHwnd
 
@@ -764,6 +763,7 @@ Func follow_linker()
 				Sleep($s)
 				MouseClick($MOUSE_CLICK_LEFT)
 				handle_collection()
+				sleep($s*10)
 			EndIf
 		WEnd
 		MouseMove($bx + $linker[$linkerat][1], $by + $linker[$linkerat][2], 0)
@@ -785,14 +785,12 @@ Func handle_collection()
 		MouseMove($bx + $i, $by + 270,0)
 		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
-		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
-		Sleep($s)
 		MouseClick($MOUSE_CLICK_LEFT)
 		$i+=3
 	WEnd
 	Send("{ESC}")
-	Sleep($s)
+	Sleep($s*20)
 EndFunc
 
 Func click_play()
