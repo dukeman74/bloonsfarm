@@ -8,8 +8,8 @@ expert1
 487
 154
 entering map
-470
-217
+192
+222
 entering hard
 453
 350

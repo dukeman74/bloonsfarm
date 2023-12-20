@@ -5,8 +5,8 @@ expert0
 488
 466
 expert1
-480
-160
+168
+279
 entering map
 192
 222

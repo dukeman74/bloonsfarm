@@ -78,8 +78,10 @@ If True Then ;initialize GUI and other variables
 
 
 	$winlabel = GUICtrlCreateLabel("wins: 0", 10, 430, 200, 20)
-	$resetlabel = GUICtrlCreateLabel("resets: 0", 10, 460, 200, 20)
+	$resetlabel = GUICtrlCreateLabel("resets: 0", 10, 445, 200, 20)
+	$collection_label = GUICtrlCreateLabel("collected: 0", 10, 460, 200, 20)
 	$hotkeys = GUICtrlCreateLabel("QUIT: ctrl+alt+q", 0, 0)
+	$runtime = GUICtrlCreateLabel("runtime: 0 min", 233, 400,2000)
 	$initmoney = GUICtrlCreatebutton("", 80, 430,150,50,$BS_BITMAP)
 	$currentmoney = GUICtrlCreatebutton("", 280, 430,150,50,$BS_BITMAP)
 
@@ -131,6 +133,7 @@ If True Then ;initialize GUI and other variables
 	$midlabel = GUICtrlCreateLabel("0", 265, 153)
 	$botlabel = GUICtrlCreateLabel("0", 265, 183)
 	$inround = GUICtrlCreateLabel("between rounds", 200, 20)
+	$round_label = GUICtrlCreateInput("6", 300, 20)
 	$removebutton = GUICtrlCreateButton("remove obstacle", $stratbuttonx, 160)
 	$dividerlabel = GUICtrlCreateLabel("----------------", $stratbuttonx, 225)
 	$sendroundbutton = GUICtrlCreateButton("send round", $stratbuttonx, 240)
@@ -150,8 +153,7 @@ If True Then ;initialize GUI and other variables
 	global $linker[100][3]
 	$linkers=0
 	$farming=false
-
-
+	$farm_start_timer=Null
 
 
 
@@ -200,7 +202,7 @@ If True Then ;initialize GUI and other variables
 
 		If True Then ;strategize screen
 			$this = $STRATEGIZING
-			$metastates[$this][$CONTROLS][0] = 34
+			$metastates[$this][$CONTROLS][0] = 35
  			$metastates[$this][$CONTROLLIST][0] = $backbutton
 			$metastates[$this][$CONTROLLIST][1] = $droptower
 			$metastates[$this][$CONTROLLIST][2] = $setfile
@@ -235,6 +237,7 @@ If True Then ;initialize GUI and other variables
 			$metastates[$this][$CONTROLLIST][31] = $useabilitykeyin
 			$metastates[$this][$CONTROLLIST][32] = $secondslabel
 			$metastates[$this][$CONTROLLIST][33] = $afterlabel
+			$metastates[$this][$CONTROLLIST][34] = $round_label
 
 
 			$i = 0
@@ -328,6 +331,7 @@ If True Then ;initialize GUI and other variables
 	$finished=false
 	$wins=0
 	$resets=0
+	$collections=0
 	$premousex=0
 	$premousey=0
 	$prex=0
@@ -389,6 +393,7 @@ While 1 ;main loop
 						$fname=$fileheader & "/tempdata/init.bmp"
 						snap($fname)
 						_GUICtrlButton_SetImage($initmoney,$fname)
+						$farm_start_timer=TimerInit()
 						read_linker($linkerfile)
 						$farming=true
 						$wins=0
@@ -408,13 +413,16 @@ While 1 ;main loop
 				While state_similarity($betweenrnd) < $cutoff
 					sleep($s)
 				WEnd
-				sleep($s*5)
+
+				sleep($s*10)
 				$a=state_similarity($pop)
-				;ConsoleWrite($a & @CRLF)
+
 				if $a > $cutoff Then
 					MouseMove($bx + 324, $by + 355, 0)
 					MouseClick($MOUSE_CLICK_LEFT)
 				EndIf
+				sleep($s*50)
+				ConsoleWrite("switching to gaming" & @CRLF)
 				change_meta_state($FOLLOWSTRAT)
 			EndIf
 			;blind_state_check(False)
@@ -602,8 +610,8 @@ Func retry_last_round()
 	sleep($s)
 	unlock() ;
 	DeleteString($stratname)
-
-
+	$old=GUICtrlRead($round_label)
+	GUICtrlSetData($round_label,$old-1)
 	lock()
 EndFunc
 
@@ -616,11 +624,11 @@ Func DeleteString($sFileName)
     EndIf
 
     _FileReadToArray($sFileName, $StrArray)
-	while (UBound($StrArray)>1 and $StrArray[UBound($StrArray)-1]<>"------------------------------------------")
+	while (UBound($StrArray)>1 and StringLeft($StrArray[UBound($StrArray)-1],5)<>"-----")
 		_ArrayDelete($StrArray, UBound($StrArray)-1) ; delete any data up to the first ------------------------------------------
 	WEnd
     _ArrayDelete($StrArray, UBound($StrArray)-1) ; delete first ------------------------------------------
-    while (UBound($StrArray)>1 and $StrArray[UBound($StrArray)-1]<>"------------------------------------------")
+    while (UBound($StrArray)>1 and StringLeft($StrArray[UBound($StrArray)-1],5)<>"-----")
 
 		_ArrayDelete($StrArray, UBound($StrArray)-1) ; delete any data up to the next ------------------------------------------
 	WEnd
@@ -632,7 +640,6 @@ Func DeleteString($sFileName)
 
     FileClose($FileHwnd)
 EndFunc
-
 
 Func most_recent_tower_to_ctrl()
 	$x=$towersarr[$towers-1][$TX]
@@ -789,8 +796,14 @@ Func handle_collection()
 		MouseClick($MOUSE_CLICK_LEFT)
 		$i+=3
 	WEnd
-	Send("{ESC}")
+	sleep($s*10)
+	While state_similarity($menu) < $cutoff
+		Send("{ESC}")
+		sleep($s*50)
+	WEnd
 	Sleep($s*20)
+	$collections+=1
+	guictrlsetdata($collection_label,"collected: " & $collections)
 EndFunc
 
 Func click_play()
@@ -823,6 +836,9 @@ Func click_play()
 	$fname=$fileheader & "/tempdata/current.bmp"
 	snap($fname)
 	_GUICtrlButton_SetImage($currentmoney,$fname)
+	$str="runtime: " & (TimerDiff($farm_start_timer)/(1000*60))
+	$str=StringSplit($str,".")[1] & " min"
+	GUICtrlSetData($runtime,$str)
 	MouseMove($bx + 277, $by + 455, 0)
 	Sleep($s)
 	MouseClick($MOUSE_CLICK_LEFT)
@@ -964,8 +980,10 @@ Func send_round($write=True)
 	$playing=True
 	GUICtrlSetData($inround,"mid round")
 	If $write Then
+		$old=GUICtrlRead($round_label)
 		FileWriteLine($stratfile, String($STARTROUND))
-		FileWriteLine($stratfile, "------------------------------------------")
+		FileWriteLine($stratfile, "------------------------------------------" & " send round " & $old)
+		GUICtrlSetData($round_label,$old+1)
 	EndIf
 EndFunc
 
@@ -1125,7 +1143,10 @@ Func read_file()
 			ConsoleWrite("tower " & $t & " had its path " & $path & " upgraded " & $times & " time(s)" & @CRLF)
 			$towersarr[$t][$path+4]+=$times
 		ElseIf $instruct == $STARTROUND Then
-			FileReadLine($stratfile)
+			$line_with_round=FileReadLine($stratfile)
+			$one_space=StringRight($line_with_round,5)
+			$round_num=StringSplit($one_space," ")[2]
+			GUICtrlSetData($round_label,$round_num+1)
 		ElseIf $instruct == $CHANGETARG Then
 			$tow=FileReadLine($stratfile)
 			$alt=int(FileReadLine($stratfile))
